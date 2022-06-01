@@ -1,0 +1,55 @@
+DATA:
+  dataset: refcocog_u
+  train_lmdb: datasets/lmdb/refcocog_u/train.lmdb
+  train_split: train
+  val_lmdb: datasets/lmdb/refcocog_u/val.lmdb
+  val_split: val
+  mask_root: datasets/masks/refcocog_u
+TRAIN:
+  # Base Arch
+  clip_pretrain: pretrain/RN101.pt
+  input_size: 416
+  word_len: 22
+  word_dim: 512
+  vis_dim: 512
+  fpn_in: [512, 1024, 512]
+  fpn_out: [256, 512, 1024]
+  sync_bn: True
+  # Decoder
+  num_layers: 3
+  num_head: 8
+  dim_ffn: 2048
+  dropout: 0.1
+  intermediate: False
+  # Training Setting
+  workers: 32  # data loader workers
+  workers_val: 16
+  epochs: 50
+  milestones: [35]
+  start_epoch: 0
+  batch_size: 64  # batch size for training
+  batch_size_val: 64  # batch size for validation during training, memory and speed tradeoff
+  base_lr: 0.0001
+  lr_decay: 0.1
+  lr_multi: 0.1
+  weight_decay: 0.
+  max_norm: 0.
+  manual_seed: 0
+  print_freq: 100
+  # Resume & Save
+  exp_name: CRIS_R101
+  output_folder: exp/refcocog_u
+  save_freq: 1
+  weight:  # path to initial weight (default: none)
+  resume:  # path to latest checkpoint (default: none)
+  evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
+Distributed:
+  dist_url: tcp://localhost:3681
+  dist_backend: 'nccl'
+  multiprocessing_distributed: True
+  world_size: 1
+  rank: 0
+TEST:
+  test_split: val-test
+  test_lmdb: datasets/lmdb/refcocog_u/val.lmdb
+  visualize: False
