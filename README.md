@@ -44,4 +44,4 @@ CUDA_VISIBLE_DEVICES=0 python -u test.py \
 
 ## License
 
-This project is under the CC-BY-NC 4.0 license. See [LICENSE](LICENSE) for details.
+This project is under the MIT license. See [LICENSE](LICENSE) for details.
