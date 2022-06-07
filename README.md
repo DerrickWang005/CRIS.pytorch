@@ -1,4 +1,4 @@
-# CRIS: CLIP-Driven Referring Image Segmentation
+# CRIS: CLIP-Driven Referring Image Segmentation(CVPR2022)
 
 Created by Zhaoqing Wang*, Yu Lu*, Qiang Li*, Xunqiang Tao, Yandong Guo, Mingming Gong and Tongliang Liu
 
