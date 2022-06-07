@@ -14,8 +14,8 @@ CLIP-Driven Referring Image Segmentation (CRIS) framework is proposed to transfe
 </p>
 
 ## News
-- :wrench: [Jun 6 ,2022] Pytorch implementation of CRIS are released.
-- :sunny: [March 2 ,2022] Our paper was accepted by CVPR-2022.
+- :wrench: [Jun 6, 2022] Pytorch implementation of CRIS are released.
+- :sunny: [Mar 2, 2022] Our paper was accepted by CVPR-2022.
 
 
 
