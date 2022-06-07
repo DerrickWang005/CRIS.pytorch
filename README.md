@@ -4,7 +4,7 @@
   <img src="img/pipeline.png" width="600">
 </p>
 
-This is a official PyTorch implementation of the [CRIS paper](https://arxiv.org/pdf/2111.15174):
+This is an official PyTorch implementation of the [CRIS paper](https://arxiv.org/pdf/2111.15174):
 ```
 @inproceedings{wang2021cris,
   title={CRIS: CLIP-Driven Referring Image Segmentation},
