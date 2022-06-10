@@ -35,7 +35,7 @@ Main results on RefCOCO+
 | ResNet50 | 61.39 |67.10 | 52.48 |
 | ResNet101 | 62.27 | 68.08 | 53.68 |
 
-Main results on RefCOCO+
+Main results on G-Ref+
 
 | Backbone | val | test |
 | ---- |:-------------:| :-----:|
