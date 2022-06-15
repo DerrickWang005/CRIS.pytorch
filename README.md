@@ -9,13 +9,13 @@ CLIP-Driven Referring Image Segmentation (CRIS) framework is proposed to transfe
 **:beers:CRIS actives new state-of-the-art performance on RefCOCO, RefCOCO+ and G-Ref with simple framework!**
 
 ## Demo
-<!-- <p align="center">
-  <iframe width="600" src="img/demo-CRIS.mp4">
-</p> -->
-<video src="img/demo-CRIS.mp4" controls="controls" width="600">
-  您的浏览器不支持播放该视频
-</video>
-
+<iframe 
+    height=450 
+    width=800 
+    src="img/demo-CRIS.mp4"
+    frameborder=0 
+    allowfullscreen>
+</iframe>
 
 ## Framework
 <p align="center">
