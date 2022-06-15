@@ -12,7 +12,7 @@ CLIP-Driven Referring Image Segmentation (CRIS) framework is proposed to transfe
 <!-- <p align="center">
   <iframe width="600" src="img/demo-CRIS.mp4">
 </p> -->
-<video id="video" controls="" preload="none" poster="Demo">
+<videos>
       <source id="mp4" src="img/demo-CRIS.mp4" type="video/mp4">
 </videos>
 
