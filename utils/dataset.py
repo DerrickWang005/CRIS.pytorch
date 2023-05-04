@@ -35,6 +35,36 @@ info = {
         'train': 44822,
         'val': 5000,
         'val-test': 5000
+    },
+    'kvasir_polyp': {
+        'train': 800,
+        'val': 100,
+        'testA': 100,
+        'testB': 100
+    },
+    'sessile_polyp': {
+        'train': 196,
+        'val': 0,
+        'testA': 0,
+        'testB': 0
+    },
+    'clinicdb_polyp': {
+        'train': 612,
+        'val': 0,
+        'testA': 0,
+        'testB': 0
+    },
+    'bkai_polyp': {
+        'train': 1000,
+        'val': 0,
+        'testA': 0,
+        'testB': 0
+    },
+    'kvasir_polyp_test': {
+        'train': 0,
+        'val': 100,
+        'testA': 0,
+        'testB': 0
     }
 }
 _tokenizer = _Tokenizer()

@@ -8,6 +8,12 @@ from tqdm import tqdm
 
 from refer import REFER
 
+
+
+def alen(x):
+    return 1 if np.isscalar(x) else len(x)
+
+
 parser = argparse.ArgumentParser(description='Data preparation')
 parser.add_argument('--data_root', type=str)
 parser.add_argument('--output_dir', type=str)
@@ -90,7 +96,7 @@ def prepare_dataset(dataset, splits, output_dir, generate_mask=False):
     for split in splits:
         dataset_array = []
         ref_ids = refer.getRefIds(split=split)
-        print('Processing split:{} - Len: {}'.format(split, np.alen(ref_ids)))
+        print('Processing split:{} - Len: {}'.format(split, alen(ref_ids)))
         for i in tqdm(ref_ids):
             ref_dict = {}
 

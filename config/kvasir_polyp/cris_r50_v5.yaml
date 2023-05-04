@@ -1,13 +1,13 @@
 DATA:
-  dataset: refcoco
-  train_lmdb: datasets/lmdb/refcoco/train.lmdb
+  dataset: kvasir_polyp
+  train_lmdb: datasets/lmdb/kvasir_polyp/train.lmdb
   train_split: train
-  val_lmdb: datasets/lmdb/refcoco/val.lmdb
+  val_lmdb: datasets/lmdb/kvasir_polyp/val.lmdb
   val_split: val
-  mask_root: datasets/masks/refcoco
+  mask_root: datasets/masks/kvasir_polyp
 TRAIN:
   # Base Arch
-  clip_pretrain: /mnt/Enterprise/miccai_2023_CRIS/CRIS.pytorch/pretrain/RN50.pt
+  clip_pretrain: pretrain/RN50.pt
   input_size: 416
   word_len: 17
   word_dim: 1024
@@ -16,20 +16,20 @@ TRAIN:
   fpn_out: [256, 512, 1024]
   sync_bn: True
   # Decoder
-  num_layers: 1
+  num_layers: 3
   num_head: 8
   dim_ffn: 2048
-  dropout: 0.1
+  dropout: 0.2
   intermediate: False
   # Training Setting
-  workers: 10 # data loader workers
-  workers_val: 10
-  epochs: 50
+  workers: 16 # data loader workers
+  workers_val: 16
+  epochs: 150
   milestones: [35]
   start_epoch: 0
-  batch_size: 4  # batch size for training
-  batch_size_val: 4 # batch size for validation during training, memory and speed tradeoff
-  base_lr: 0.0001
+  batch_size: 16  # batch size for training
+  batch_size_val: 16 # batch size for validation during training, memory and speed tradeoff
+  base_lr: 0.002
   lr_decay: 0.1
   lr_multi: 0.1
   weight_decay: 0.
@@ -38,10 +38,10 @@ TRAIN:
   print_freq: 100
   # Resume & Save
   exp_name: CRIS_R50
-  output_folder: /mnt/Enterprise/miccai_2023_CRIS/CRIS.pytorch/exp_old/refcoco
+  output_folder: exp/kvasir_polyp
   save_freq: 1
   weight:  # path to initial weight (default: none)
-  resume:  pretrain/best_model.pth # path to latest checkpoint (default: none)
+  resume: pretrain/cris_best.pth # path to latest checkpoint (default: none)
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
 Distributed:
   dist_url: tcp://localhost:3681
@@ -51,5 +51,5 @@ Distributed:
   rank: 0
 TEST:
   test_split: val-test
-  test_lmdb: datasets/lmdb/refcoco/val.lmdb
-  visualize: False
+  test_lmdb: datasets/lmdb/kvasir_polyp/val.lmdb
+  visualize: True

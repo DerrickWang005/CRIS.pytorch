@@ -1,14 +1,14 @@
+import inspect
 import os
 import random
-import numpy as np
-from PIL import Image
-from loguru import logger
 import sys
-import inspect
 
+import numpy as np
 import torch
-from torch import nn
 import torch.distributed as dist
+from loguru import logger
+from PIL import Image
+from torch import nn
 
 
 def init_random_seed(seed=None, device='cuda', rank=0, world_size=1):
