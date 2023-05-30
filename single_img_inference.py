@@ -40,7 +40,7 @@ def get_parser():
     # args = parser.parse_args()
     # assert args.config is not None
     cfg = config.load_cfg_from_cfg_file(
-        "/mnt/Enterprise/miccai_2023_CRIS/CRIS.pytorch/config/refcoco/cris_r50.yaml"
+        "/mnt/Enterprise/miccai_2023_CRIS/CRIS.pytorch/config/cris_r50.yaml"
     )
     # if args.opts is not None:
     #     cfg = config.merge_cfg_from_list(cfg, args.opts)
@@ -48,7 +48,7 @@ def get_parser():
 
 
 @logger.catch
-def infer(img_path, txt, model_path=None):
+def get_inferer(model_path=None):
     args = get_parser()
     args.output_dir = os.path.join(args.output_folder, args.exp_name)
     if args.visualize:
@@ -75,7 +75,7 @@ def infer(img_path, txt, model_path=None):
 
     # build model
     model, _ = build_segmenter(args)
-    model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model)
     # logger.info(model)
 
     if not model_path == None:
@@ -95,9 +95,9 @@ def infer(img_path, txt, model_path=None):
             )
         )
 
-    # inference
-    return inference(img_path, txt, model, args)
+    model.eval().cuda()
 
+    def infer(img_path, txt):
+        return inference(img_path, txt, model, args)
 
-if __name__ == "__main__":
-    infer()
+    return infer
