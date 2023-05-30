@@ -44,7 +44,11 @@ def main():
     args.output_dir = os.path.join(args.output_folder, args.exp_name)
     if args.visualize:
         args.vis_dir = os.path.join(args.output_dir, "vis")
+        args.gt_dir = os.path.join(args.output_dir, "gt")
+        args.pred_dir = os.path.join(args.output_dir, "pred")
         os.makedirs(args.vis_dir, exist_ok=True)
+        os.makedirs(args.gt_dir, exist_ok=True)
+        os.makedirs(args.pred_dir, exist_ok=True)
 
     # logger
     setup_logger(args.output_dir, distributed_rank=0, filename="test.log", mode="a")
@@ -59,6 +63,7 @@ def main():
         mode="test",
         input_size=args.input_size,
         word_length=args.word_len,
+        prompt_type=args.prompt_type,
     )
     test_loader = torch.utils.data.DataLoader(
         test_data, batch_size=1, shuffle=False, num_workers=1, pin_memory=True
@@ -69,7 +74,8 @@ def main():
     model = torch.nn.DataParallel(model).cuda()
     logger.info(model)
 
-    args.model_dir = os.path.join(args.output_dir, "cris_best.pth")
+    # args.model_dir = os.path.join(args.output_dir, "cris_best.pth")
+    args.model_dir = os.path.join("exp_old/kvasir_polyp_test/CRIS_R50", "cris_best.pth")
     if os.path.isfile(args.model_dir):
         logger.info("=> loading checkpoint '{}'".format(args.model_dir))
         checkpoint = torch.load(args.model_dir)
