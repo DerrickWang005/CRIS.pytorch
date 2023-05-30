@@ -22,8 +22,6 @@ def train(
     scaler,
     epoch,
     args,
-    valid_epoch_num,
-    valid_epoch_iou,
 ):
     batch_time = AverageMeter("Batch", ":2.2f")
     data_time = AverageMeter("Data", ":2.2f")
@@ -83,44 +81,23 @@ def train(
         batch_time.update(time.time() - end)
         end = time.time()
 
-        # wandb.log({"training/test_iou":iou_meter.val})
-
         if (i + 1) % args.print_freq == 0:
             progress.display(i + 1)
-            if dist.get_rank() in [-1, 0]:
-                print("hihihi")
-
-                # wandb.log(
-                # {
-                #     "time/batch": batch_time.val,
-                #     "time/data": data_time.val,
-                #     "training/lr": lr.val,
-                #     "training/loss": loss_meter.val,
-                #     "training/iou": iou_meter.val,
-                #     "training/prec@50": pr_meter.val,
-                # },
-                # step=epoch * len(train_loader) + (i + 1))
-                wandb.log(
-                    {
-                        "training/epoch_loss": loss_meter.val,
-                        "training/epoch_iou": iou_meter.val,
-                        "training/epoch_prec@50": pr_meter.val,
-                        "valid/iou": valid_epoch_iou,
-                    },
-                    step=epoch,
-                )
-        # if (i + 1) % len(train_loader) == 0:
-        #     progress.display(i + 1)
-        #     if dist.get_rank() in [-1, 0]:
-        #         print(                    {
-        #                 "training/epoch_loss": loss_meter.val,
-        #                 "training/epoch_iou": iou_meter.val,
-        #                 "training/wpoch_prec@50": pr_meter.val,
-        #             })
+            # if dist.get_rank() in [-1, 0]:
+            # wandb.log(
+            #     {
+            #         "training/epoch_loss": loss_meter.val,
+            #         "training/epoch_iou": iou_meter.val,
+            #         "training/epoch_prec@50": pr_meter.val,
+            #         # "valid/iou": valid_epoch_iou,
+            #     },
+            #     step=epoch,
+            # )
+    return iou_meter.val, loss_meter.val
 
 
 @torch.no_grad()
-def validate(val_loader, model, epoch, args):
+def validate(val_loader, model, epoch, args, train_iou, train_loss):
     iou_list = []
     model.eval()
     time.sleep(2)
@@ -173,6 +150,16 @@ def validate(val_loader, model, epoch, args):
     )
 
     logger.info(head + temp)
+
+    if dist.get_rank() in [-1, 0]:
+        wandb.log(
+            {
+                "training/epoch_loss": train_loss,
+                "training/epoch_iou": train_iou,
+                "valid/epoch_iou": iou.item(),
+            },
+            step=epoch,
+        )
     return iou.item(), prec
 
 
@@ -196,6 +183,9 @@ def inference(test_loader, model, args):
                 img=param["ori_img"][0].cpu().numpy(),
             )
             cv2.imwrite(filename=os.path.join(args.vis_dir, mask_name), img=mask)
+            cv2.imwrite(
+                filename=os.path.join(args.gt_dir, "{}.png".format(seg_id)), img=mask
+            )
         # multiple sentences
         for sent in param["sents"]:
             mask = mask / 255.0
@@ -227,6 +217,10 @@ def inference(test_loader, model, args):
                 sent = "_".join(sent[0].split(" "))
                 pred_name = "{}-iou={:.2f}-{}.png".format(seg_id, iou * 100, sent)
                 cv2.imwrite(filename=os.path.join(args.vis_dir, pred_name), img=pred)
+                cv2.imwrite(
+                    filename=os.path.join(args.pred_dir, "{}.png".format(seg_id)),
+                    img=pred,
+                )
     logger.info("=> Metric Calculation <=")
     iou_list = np.stack(iou_list)
     iou_list = torch.from_numpy(iou_list).to(img.device)

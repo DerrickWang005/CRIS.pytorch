@@ -16,13 +16,12 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data as data
-from loguru import logger
-from torch.optim.lr_scheduler import MultiStepLR
-
 import utils.config as config
 import wandb
 from engine.engine import train, validate
+from loguru import logger
 from model import build_segmenter
+from torch.optim.lr_scheduler import MultiStepLR
 from utils.dataset import RefDataset
 from utils.misc import init_random_seed, set_random_seed, setup_logger, worker_init_fn
 
@@ -90,8 +89,8 @@ def main_worker(gpu, args):
             job_type="training",
             mode="online",
             config=args,
-            project="CRIS",
-            name=args.exp_name,
+            project="VLM-SEG-CRIS",
+            name=args.exp_name + "_" + args.output_folder + "_" + args.prompt_type,
             tags=[args.dataset, args.clip_pretrain],
         )
     dist.barrier()
@@ -101,11 +100,13 @@ def main_worker(gpu, args):
     if args.sync_bn:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     logger.info(model)
+    logger.info(args)
     model = nn.parallel.DistributedDataParallel(
         model.cuda(), device_ids=[args.gpu], find_unused_parameters=True
     )
 
     # build optimizer & lr scheduler
+    print(f"*******************************{args.base_lr}********************")
     optimizer = torch.optim.Adam(
         param_list, lr=args.base_lr, weight_decay=args.weight_decay
     )
@@ -124,6 +125,7 @@ def main_worker(gpu, args):
         mode="train",
         input_size=args.input_size,
         word_length=args.word_len,
+        prompt_type=args.prompt_type,
     )
     val_data = RefDataset(
         lmdb_dir=args.val_lmdb,
@@ -133,6 +135,7 @@ def main_worker(gpu, args):
         mode="val",
         input_size=args.input_size,
         word_length=args.word_len,
+        prompt_type=args.prompt_type,
     )
 
     # build dataloader
@@ -188,7 +191,7 @@ def main_worker(gpu, args):
 
     # start training
     start_time = time.time()
-    prev_valid_iou = 0.0
+
     for epoch in range(args.start_epoch, args.epochs):
         epoch_log = epoch + 1
 
@@ -196,7 +199,7 @@ def main_worker(gpu, args):
         train_sampler.set_epoch(epoch_log)
 
         # train
-        train(
+        train_iou, train_loss = train(
             train_loader,
             model,
             optimizer,
@@ -204,13 +207,12 @@ def main_worker(gpu, args):
             scaler,
             epoch_log,
             args,
-            epoch - 1,
-            prev_valid_iou,
         )
 
         # evaluation
-        iou, prec_dict = validate(val_loader, model, epoch_log, args)
-        prev_valid_iou = iou
+        iou, prec_dict = validate(
+            val_loader, model, epoch_log, args, train_iou, train_loss
+        )
 
         # save model
         if dist.get_rank() == 0:
