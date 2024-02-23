@@ -7,3 +7,4 @@ loguru
 pycocotools
 matplotlib
 tqdm
+pickle5

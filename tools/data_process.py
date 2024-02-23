@@ -90,7 +90,7 @@ def prepare_dataset(dataset, splits, output_dir, generate_mask=False):
     for split in splits:
         dataset_array = []
         ref_ids = refer.getRefIds(split=split)
-        print('Processing split:{} - Len: {}'.format(split, np.alen(ref_ids)))
+        print('Processing split:{} - Len: {}'.format(split, len(ref_ids)))
         for i in tqdm(ref_ids):
             ref_dict = {}
 
