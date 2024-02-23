@@ -6,6 +6,7 @@ import pyarrow as pa
 import json
 from tqdm import tqdm
 import warnings
+import pickle5
 warnings.filterwarnings("ignore")
 
 
@@ -14,7 +15,7 @@ def loads_pyarrow(buf):
     Args:
         buf: the output of `dumps`.
     """
-    return pa.deserialize(buf)
+    return pickle5.loads(buf)
 
 
 def raw_reader(path):
@@ -29,7 +30,7 @@ def dumps_pyarrow(obj):
     Returns:
         Implementation-dependent bytes-like object
     """
-    return pa.serialize(obj).to_buffer()
+    return pickle5.dumps(obj, protocol=5)
 
 
 def folder2lmdb(json_data, img_dir, mask_dir, output_dir, split, write_frequency=1000):
