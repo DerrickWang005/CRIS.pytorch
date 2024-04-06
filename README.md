@@ -59,6 +59,7 @@ Main results on G-Ref
 
 This implementation only supports **multi-gpu**, **DistributedDataParallel** training, which is faster and simpler; single-gpu or DataParallel training is not supported. Besides, the evaluation only supports single-gpu mode.
 
+Before training, please login in your wandb via `wandb login` or `wandb login --anonymously`.
 To do training of CRIS with 8 GPUs, run:
 
 ```
