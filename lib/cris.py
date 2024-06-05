@@ -252,5 +252,5 @@ class CRIS(nn.Module):
         mask_cls = F.softmax(mask_cls, dim=-1)
         mask_pred = mask_pred.sigmoid()
         semseg = torch.einsum("qc,qhw->chw", mask_cls, mask_pred)
-        semseg = 1 - semseg.argmax(dim=0)  # 0: background, 1: foreground
+        semseg = semseg.argmax(dim=0)  # 0: background, 1: foreground
         return semseg

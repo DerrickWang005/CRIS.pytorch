@@ -15,30 +15,34 @@ import os
 from collections import OrderedDict
 from typing import Any, Dict, List, Set
 
-import detectron2.utils.comm as comm
 import torch
 import torch.utils.data as torchdata
+
+import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import MetadataCatalog, build_detection_train_loader
 from detectron2.data import transforms as T
 from detectron2.data.build import trivial_batch_collator
 from detectron2.data.samplers import InferenceSampler
-from detectron2.engine import (DefaultTrainer, default_argument_parser,
-                               default_setup, launch)
-from detectron2.evaluation import (CityscapesInstanceEvaluator,
-                                   CityscapesSemSegEvaluator, COCOEvaluator,
-                                   COCOPanopticEvaluator, DatasetEvaluators,
-                                   LVISEvaluator, SemSegEvaluator,
-                                   verify_results)
+from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
+from detectron2.evaluation import (
+    CityscapesInstanceEvaluator,
+    CityscapesSemSegEvaluator,
+    COCOEvaluator,
+    COCOPanopticEvaluator,
+    DatasetEvaluators,
+    LVISEvaluator,
+    SemSegEvaluator,
+    verify_results,
+)
 from detectron2.projects.deeplab import build_lr_scheduler
 from detectron2.projects.point_rend import ColorAugSSDTransform
 from detectron2.solver.build import maybe_add_gradient_clipping
 from detectron2.utils.logger import setup_logger
 
 # MaskFormer
-from lib import (ReferDataset, SemanticSegmentorWithTTA, ReferEvaluator, add_cris_config,
-                 build_datasets)
+from lib import ReferDataset, ReferEvaluator, SemanticSegmentorWithTTA, add_cris_config, build_datasets
 
 
 class Trainer(DefaultTrainer):
@@ -58,7 +62,7 @@ class Trainer(DefaultTrainer):
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
             os.makedirs(output_folder, exist_ok=True)
-            
+
         dataset_name = f"{cfg.INPUT.TRAIN_NAME}-{cfg.INPUT.REFER_SPLIT}-{cfg.INPUT.DATA_TEST_SPLIT}"
         return ReferEvaluator(
             dataset_name,
@@ -86,9 +90,7 @@ class Trainer(DefaultTrainer):
             refer_split=cfg.INPUT.REFER_SPLIT,
             data_split=cfg.INPUT.DATA_TEST_SPLIT,
             augmentations=[
-                T.ResizeShortestEdge(
-                    short_edge_length=cfg.INPUT.CROP_SIZE, max_size=cfg.INPUT.CROP_SIZE
-                ),
+                T.ResizeShortestEdge(short_edge_length=cfg.INPUT.CROP_SIZE, max_size=cfg.INPUT.CROP_SIZE),
                 T.FixedSizeCrop(
                     crop_size=(cfg.INPUT.CROP_SIZE, cfg.INPUT.CROP_SIZE),
                     pad_value=128,
@@ -153,13 +155,8 @@ class Trainer(DefaultTrainer):
 
                 hyperparams = copy.copy(defaults)
                 if "backbone" in module_name:
-                    hyperparams["lr"] = (
-                        hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
-                    )
-                if (
-                    "relative_position_bias_table" in module_param_name
-                    or "absolute_pos_embed" in module_param_name
-                ):
+                    hyperparams["lr"] = hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
+                if "relative_position_bias_table" in module_param_name or "absolute_pos_embed" in module_param_name:
                     print(module_param_name)
                     hyperparams["weight_decay"] = 0.0
                 if isinstance(module, norm_module_types):
@@ -179,9 +176,7 @@ class Trainer(DefaultTrainer):
 
             class FullModelGradientClippingOptimizer(optim):
                 def step(self, closure=None):
-                    all_params = itertools.chain(
-                        *[x["params"] for x in self.param_groups]
-                    )
+                    all_params = itertools.chain(*[x["params"] for x in self.param_groups])
                     torch.nn.utils.clip_grad_norm_(all_params, clip_norm_val)
                     super().step(closure=closure)
 
@@ -193,14 +188,12 @@ class Trainer(DefaultTrainer):
                 params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM
             )
         elif optimizer_type == "ADAMW":
-            optimizer = maybe_add_full_model_gradient_clipping(torch.optim.AdamW)(
-                params, cfg.SOLVER.BASE_LR
-            )
+            optimizer = maybe_add_full_model_gradient_clipping(torch.optim.AdamW)(params, cfg.SOLVER.BASE_LR)
         else:
             raise NotImplementedError(f"no optimizer type {optimizer_type}")
         if not cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE == "full_model":
             optimizer = maybe_add_gradient_clipping(cfg, optimizer)
-        
+
         # log number of parameters
         num_params = sum(p.numel() for p in model.parameters())
         logger = logging.getLogger("detectron2.trainer")
@@ -214,9 +207,7 @@ class Trainer(DefaultTrainer):
         logger.info("Running inference with test-time augmentation ...")
         model = SemanticSegmentorWithTTA(cfg, model)
         evaluators = [
-            cls.build_evaluator(
-                cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_TTA")
-            )
+            cls.build_evaluator(cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_TTA"))
             for name in cfg.DATASETS.TEST
         ]
         res = cls.test(cfg, model, evaluators)
@@ -236,9 +227,7 @@ def setup(args):
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module
-    setup_logger(
-        output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="cris-referseg"
-    )
+    setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="cris-referseg")
     return cfg
 
 
@@ -247,9 +236,7 @@ def main(args):
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=args.resume
-        )
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(cfg.MODEL.WEIGHTS, resume=args.resume)
         res = Trainer.test(cfg, model)
         if cfg.TEST.AUG.ENABLED:
             res.update(Trainer.test_with_TTA(cfg, model))

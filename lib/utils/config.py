@@ -25,7 +25,9 @@ def add_cris_config(cfg):
     cfg.MODEL.META_ARCHITECTURE = "CRIS"
     cfg.MODEL.BACKBONE.NAME = "CLIP"
     cfg.MODEL.BACKBONE.CLIP_MODEL_NAME = "convnext_large_d_320"
-    cfg.MODEL.BACKBONE.CLIP_PRETRAINED_WEIGHTS = "/workspace/pretrains/convnext_large_d_320.laion2B-s29B-b131K-ft-soup.pth"
+    cfg.MODEL.BACKBONE.CLIP_PRETRAINED_WEIGHTS = (
+        "/workspace/pretrains/convnext_large_d_320.laion2B-s29B-b131K-ft-soup.pth"
+    )
 
     cfg.MODEL.CRIS = CN()
     cfg.MODEL.CRIS.PIXEL_DECODER_NAME = "MSDeformAttnPixelDecoder"

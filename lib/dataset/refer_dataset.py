@@ -121,7 +121,7 @@ class ReferDataset(Dataset):
         data_dict["image_shape"] = mask_ori.shape[-2:]  # h, w
         data_dict["gt_mask"] = mask.repeat(self.pos_repeat, 1, 1)
         data_dict["gt_mask_ori"] = mask_ori.repeat(self.pos_repeat, 1, 1)
-        data_dict["gt_class"] = torch.tensor([0] * self.pos_repeat, dtype=torch.int64)
+        data_dict["gt_class"] = torch.tensor([1] * self.pos_repeat, dtype=torch.int64)
         data_dict["sentence"] = sentence
 
         return data_dict
