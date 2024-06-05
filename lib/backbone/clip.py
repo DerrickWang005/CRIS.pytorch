@@ -11,9 +11,9 @@ def build_backbone(cfg):
     """
     Build a instance embedding branch from `cfg.MODEL.INS_EMBED_HEAD.NAME`.
     """
-    model_name = cfg.MODEL.CLIP_MODEL_NAME
-    pretrained = cfg.MODEL.CLIP_PRETRAINED_WEIGHTS
     backbone_name = cfg.MODEL.BACKBONE.NAME
+    model_name = cfg.MODEL.BACKBONE.CLIP_MODEL_NAME
+    pretrained = cfg.MODEL.BACKBONE.CLIP_PRETRAINED_WEIGHTS
     backbone = BACKBONE_REGISTRY.get(backbone_name)(cfg, model_name, pretrained)
     assert isinstance(backbone, Backbone)
     return backbone
@@ -97,17 +97,18 @@ class CLIP(Backbone):
         eos = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.clip_model.text_projection
         return F.normalize(eos, dim=-1) if normalize else eos, x
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def extract_text_features(self, text_list, device):
         self.eval()
         # reference for templates: https://github.com/mlfoundations/open_clip/blob/91f6cce16b7bee90b3b5d38ca305b5b3b67cc200/src/training/imagenet_zeroshot_data.py
         text_tokens = self.tokenize_text(text_list)
         text_tokens = text_tokens.to(device)
+        pad_mask = text_tokens == 0
         # we return un-normalized text feature.
         sent_features, text_features = self.encode_text(text_tokens, normalize=False)
-        return sent_features, text_features
+        return sent_features, text_features, pad_mask
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def extract_visual_features(self, x):
         self.eval()
         out = {}

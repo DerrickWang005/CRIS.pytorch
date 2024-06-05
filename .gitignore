@@ -1,0 +1,62 @@
+# output dir
+output
+results
+data
+demo
+tools
+
+
+*.png
+*.json
+*.diff
+*.jpg
+!/projects/DensePose/doc/images/*.jpg
+
+# compilation and distribution
+__pycache__
+_ext
+*.pyc
+*.pyd
+*.so
+*.dll
+*.egg-info/
+build/
+dist/
+wheels/
+
+# pytorch/python/numpy formats
+*.pth
+*.pkl
+*.npy
+*.ts
+*.parquet
+model_ts*.txt
+rank*.txt
+
+# ipython/jupyter notebooks
+*.ipynb
+**/.ipynb_checkpoints/
+
+# Editor temporaries
+*.swn
+*.swo
+*.swp
+*~
+
+# editor settings
+.idea
+.vscode
+_darcs
+
+# project dirs
+/detectron2/model_zoo/configs
+/datasets/*
+!/datasets/*.*
+/projects/*/datasets
+/models
+/snippet
+/detectron2
+/results
+/all_datasets
+/tools/sa1b_*
+/tools/*.parquet

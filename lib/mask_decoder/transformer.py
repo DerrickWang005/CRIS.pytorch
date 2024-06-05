@@ -10,10 +10,14 @@ from detectron2.config import configurable
 from detectron2.layers import Conv2d
 from detectron2.utils.registry import Registry
 
-from ...utils import point_sample
-from ..utils import CrossAttentionLayer, FFNLayer, SelfAttentionLayer, MLP
-from ..utils import PositionEmbeddingRandom, PositionEmbeddingSine
-
+from ..utils import (
+    MLP,
+    CrossAttentionLayer,
+    FFNLayer,
+    PositionEmbeddingRandom,
+    PositionEmbeddingSine,
+    SelfAttentionLayer,
+)
 
 TRANSFORMER_DECODER_REGISTRY = Registry("TRANSFORMER_MODULE")
 TRANSFORMER_DECODER_REGISTRY.__doc__ = """
@@ -82,10 +86,11 @@ class MultiScaleMaskDecoder(nn.Module):
         self.num_query = num_query
 
         # object query
+        self.word_proj = nn.Linear(cls_dim, embed_dim)
         self.obj_query = nn.Embedding(num_query, embed_dim)
-        obj_mask = torch.zeros(1, num_query)
+        obj_mask = torch.zeros(1, num_query).bool()
         self.register_buffer("obj_mask", obj_mask)
-        
+
         # void
         self.void_embed = nn.Embedding(1, cls_dim)
 
@@ -158,7 +163,7 @@ class MultiScaleMaskDecoder(nn.Module):
         ret["embed_dim"] = cfg.MODEL.CRIS.EMBED_DIM
         ret["nheads"] = cfg.MODEL.CRIS.NHEADS
         ret["activation"] = cfg.MODEL.CRIS.ACTIVATION
-        ret["dim_feedforward"] = cfg.MODEL.OVSEG.DIM_FEEDFORWARD
+        ret["dim_feedforward"] = cfg.MODEL.CRIS.DIM_FEEDFORWARD
 
         # NOTE: because we add learnable query features which requires supervision,
         # we add minus 1 to decoder layers to be consistent with our loss
@@ -195,10 +200,7 @@ class MultiScaleMaskDecoder(nn.Module):
             size_list.append(x[i].shape[-2:])
             # flatten NxCxHxW to NxHWxC
             pos.append(self.pe_layer(x[i], None).flatten(2).permute(0, 2, 1))
-            src.append(
-                self.input_proj[i](x[i]).flatten(2).permute(0, 2, 1)
-                + self.level_embed.weight[i][None, None, :]
-            )
+            src.append(self.input_proj[i](x[i]).flatten(2).permute(0, 2, 1) + self.level_embed.weight[i][None, None, :])
 
         # prepare object query
         obj_query = self.obj_query.weight  # Q, C
@@ -206,15 +208,14 @@ class MultiScaleMaskDecoder(nn.Module):
         obj_mask = self.obj_mask.repeat(B, 1)  # B, Q
 
         # prepare query
+        y_word = self.word_proj(y_word)  # B, T, C
         output = torch.cat([obj_query, y_word], dim=1)  # B, Q + T, C
         query_pos_embed = output
         query_pad_mask = torch.cat([obj_mask, y_pad_mask], dim=1)  # B, Q + T
-        query_pad_mask = query_pad_mask.unsqueeze(1).repeat(
-            1, self.num_query + T, 1
-        )  # B, Q + T, Q + T
-        
+        query_pad_mask = query_pad_mask.unsqueeze(1).unsqueeze(1).repeat(1, 1, self.num_query + T, 1)  # B, Q + T, Q + T
+
         # prepare cls
-        void_embed = self.void_embed.weight.unsqueeze(0).repeat(B, 1)
+        void_embed = self.void_embed.weight.repeat(B, 1)
         y_sent = torch.stack([y_sent, void_embed], dim=1)
 
         # prediction heads on learnable query features
@@ -269,9 +270,9 @@ class MultiScaleMaskDecoder(nn.Module):
         assert len(predictions_mask) == self.num_layers + 1
 
         out = {
-            "pred_mask": predictions_mask[-1],
-            "pred_cls": predictions_cls[-1],
-            "aux_output": self._set_aux_loss(predictions_mask, predictions_cls),
+            "pred_masks": predictions_mask[-1],
+            "pred_logits": predictions_cls[-1],
+            "aux_outputs": self._set_aux_loss(predictions_mask, predictions_cls),
         }
         return out
 
@@ -286,10 +287,9 @@ class MultiScaleMaskDecoder(nn.Module):
         # drop y_word
         output = output[:, : self.num_query]
         output = self.decoder_norm(output)  # B, Q, C
+
         mask_embed = self.mask_embed(output)
         cls_embed = self.cls_embed(output)  # B, Q, D
-
-        B, C, H, W = mask_features.shape
         mask_features = self.feat_embed(mask_features)
 
         # mask branch
@@ -298,7 +298,7 @@ class MultiScaleMaskDecoder(nn.Module):
 
         # NOTE: prediction is of higher-resolution
         attn_mask = F.interpolate(
-            attn_mask,
+            outputs_mask,
             size=attn_mask_target_size,
             mode="bilinear",
             align_corners=False,
@@ -309,9 +309,7 @@ class MultiScaleMaskDecoder(nn.Module):
         # [B, Q, K, H, W] -> [B, Q, 1, H, W] -> [B, 1, Q, 1, H, W] -> [B, 1, Q, 1, H*W] -> [B, 1, Q, K, H*W] -> [B, 1, Q*K, H*W]
         attn_mask = attn_mask.sigmoid().ge(0.5)
         attn_mask_y = attn_mask.sum(dim=1, keepdim=True).ge(0.5).repeat(1, T, 1, 1)
-        attn_mask = torch.cat([attn_mask, attn_mask_y], dim=1).flatten(
-            -2
-        )  # B, Q + T, HW
+        attn_mask = torch.cat([attn_mask, attn_mask_y], dim=1).flatten(-2)  # B, Q + T, HW
         attn_mask = ~attn_mask.unsqueeze(1).detach()  # B, 1, Q + T, HW
 
         return outputs_mask, outputs_cls, attn_mask
@@ -322,6 +320,5 @@ class MultiScaleMaskDecoder(nn.Module):
         # doesn't support dictionary with non-homogeneous values, such
         # as a dict having both a Tensor and a list.
         return [
-            {"pred_mask": mask, "pred_cls": cls}
-            for mask, cls in zip(predictions_mask[:-1], predictions_cls[:-1])
+            {"pred_masks": mask, "pred_logits": cls} for mask, cls in zip(predictions_mask[:-1], predictions_cls[:-1])
         ]

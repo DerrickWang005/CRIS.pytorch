@@ -1,0 +1,102 @@
+CUDNN_BENCHMARK: true
+SEED: 42
+OUTPUT_DIR: /workspace/output/s-ovseg_s1/exp2_convL_enc6-dec9_sa5m_110k_size896_bs56
+
+GLOBAL:
+  HACK: 1.0
+
+DATALOADER:
+  ASPECT_RATIO_GROUPING: true
+  FILTER_EMPTY_ANNOTATIONS: true
+  NUM_WORKERS: 8
+  REPEAT_THRESHOLD: 0.0
+  SAMPLER_TRAIN: TrainingSampler
+
+DATASETS:
+  PRECOMPUTED_PROPOSAL_TOPK_TEST: 1000
+  PRECOMPUTED_PROPOSAL_TOPK_TRAIN: 2000
+  PROPOSAL_FILES_TEST: []
+  PROPOSAL_FILES_TRAIN: []
+  TRAIN:
+  - openvocab_coco_2017_train_panoptic_with_sem_seg
+  TEST:
+  - openvocab_ade20k_panoptic_val
+
+INPUT:
+  DATASET_NAME: ReferDataset
+  TRAIN_ROOT: /vepfs/home/wangzhaoqing/CRIS.pytorch/data/refcoco
+  TRAIN_NAME: refcoco
+  REFER_SPLIT: unc
+  DATA_SPLIT: train
+  DATA_TEST_SPLIT: val
+  CROP_SIZE: 640
+  POS_REPEAT: 5
+  IGNORE_LABEL: 0
+  FORMAT: RGB
+
+MODEL:
+  META_ARCHITECTURE: CRIS
+  BACKBONE:
+    FREEZE_AT: 0
+    NAME: CLIP
+    CLIP_MODEL_NAME: convnext_base_w_320
+    CLIP_PRETRAINED_WEIGHTS: /vepfs/home/wangzhaoqing/CRIS.pytorch/pretrain_model/models--laion--CLIP-convnext_base_w_320-laion_aesthetic-s13B-b82K/snapshots/02dbcad4596a5fa4ee71a16d35c701e7b12943f0/open_clip_pytorch_model.bin
+  CRIS:
+    TRANSFORMER_ENC_LAYERS: 6
+    DEC_LAYERS: 10
+    NUM_QUERY: 100
+    CLS_DIM: 640
+    TEST:
+      VISUALIZE_SAVE: false
+  PIXEL_MEAN:
+  - 122.7709383
+  - 116.7460125
+  - 104.09373615
+  PIXEL_STD:
+  - 68.5005327
+  - 66.6321579
+  - 70.32316305
+  DEVICE: cuda
+  KEYPOINT_ON: false
+  LOAD_PROPOSALS: false
+  MASK_ON: false
+  WEIGHTS: ''
+
+SOLVER:
+  IMS_PER_BATCH: 32
+  BASE_LR: 2e-5
+  WARMUP_FACTOR: 1.0
+  WARMUP_ITERS: 10
+  WARMUP_METHOD: linear
+  MAX_ITER: 150000
+  STEPS:
+  - 110000
+  - 140000
+  CHECKPOINT_PERIOD: 10000
+  LR_SCHEDULER_NAME: WarmupMultiStepLR
+  WEIGHT_DECAY: 0.5
+  WEIGHT_DECAY_BIAS: null
+  WEIGHT_DECAY_EMBED: 0.0
+  WEIGHT_DECAY_NORM: 0.0
+  AMP:
+    ENABLED: true
+  BACKBONE_MULTIPLIER: 0.1
+  BASE_LR_END: 0.0
+  BIAS_LR_FACTOR: 1.0
+  CLIP_GRADIENTS:
+    CLIP_TYPE: full_model
+    CLIP_VALUE: 1.0
+    ENABLED: true
+    NORM_TYPE: 2.0
+  GAMMA: 0.1
+  MOMENTUM: 0.9
+  NESTEROV: false
+  NUM_DECAYS: 3
+  OPTIMIZER: ADAMW
+  POLY_LR_CONSTANT_ENDING: 0.0
+  POLY_LR_POWER: 0.9
+  REFERENCE_WORLD_SIZE: 0
+  RESCALE_INTERVAL: false
+
+VERSION: 2
+VIS_PERIOD: 0

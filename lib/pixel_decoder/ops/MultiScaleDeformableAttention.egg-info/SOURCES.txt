@@ -1,4 +1,7 @@
 setup.py
+/vepfs/home/wangzhaoqing/CRIS.pytorch/lib/pixel_decoder/ops/src/vision.cpp
+/vepfs/home/wangzhaoqing/CRIS.pytorch/lib/pixel_decoder/ops/src/cpu/ms_deform_attn_cpu.cpp
+/vepfs/home/wangzhaoqing/CRIS.pytorch/lib/pixel_decoder/ops/src/cuda/ms_deform_attn_cuda.cu
 /vepfs/home/wangzhaoqing/uni-ovseg/lib/models/pixel_decoder/ops/src/vision.cpp
 /vepfs/home/wangzhaoqing/uni-ovseg/lib/models/pixel_decoder/ops/src/cpu/ms_deform_attn_cpu.cpp
 /vepfs/home/wangzhaoqing/uni-ovseg/lib/models/pixel_decoder/ops/src/cuda/ms_deform_attn_cuda.cu

@@ -1,10 +1,10 @@
-import math
 from typing import Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 
 def _get_activation_fn(activation):
@@ -67,23 +67,10 @@ class Attention(nn.Module):
         key_padding_mask: torch.Tensor = None,
     ) -> torch.Tensor:
         B, N, C = query.shape
-        query = (
-            self.q(query)
-            .reshape(B, N, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        key = (
-            self.k(key).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        )
-        value = (
-            self.v(value)
-            .reshape(B, N, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-
-        with torch.backends.cuda.sdp_kernel(
-            enable_flash=True, enable_mem_efficient=True, enable_math=False
-        ):
+        query = self.q(query).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        key = self.k(key).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        value = self.v(value).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
             x = F.scaled_dot_product_attention(
                 query,
                 key,
@@ -133,23 +120,11 @@ class CrossAttention(nn.Module):
     ) -> torch.Tensor:
         B, N, C = query.shape
         _, M, _ = key.shape
-        query = (
-            self.q(query)
-            .reshape(B, N, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        key = (
-            self.k(key).reshape(B, M, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        )
-        value = (
-            self.v(value)
-            .reshape(B, M, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        query = self.q(query).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        key = self.k(key).reshape(B, M, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        value = self.v(value).reshape(B, M, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        with torch.backends.cuda.sdp_kernel(
-            enable_flash=True, enable_mem_efficient=True, enable_math=False
-        ):
+        with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
             x = F.scaled_dot_product_attention(
                 query,
                 key,
@@ -166,9 +141,7 @@ class CrossAttention(nn.Module):
 
 
 class SelfAttentionLayer(nn.Module):
-    def __init__(
-        self, d_model, nhead, dropout=0.0, activation="relu", normalize_before=False
-    ):
+    def __init__(self, d_model, nhead, dropout=0.0, activation="relu", normalize_before=False):
         super().__init__()
         self.self_attn = Attention(d_model, nhead, attn_drop=dropout, proj_drop=dropout)
 
@@ -196,9 +169,7 @@ class SelfAttentionLayer(nn.Module):
         query_pos: Optional[Tensor] = None,
     ):
         q = k = self.with_pos_embed(tgt, query_pos)
-        tgt2 = self.self_attn(
-            q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask
-        )[0]
+        tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout(tgt2)
         tgt = self.norm(tgt)
 
@@ -213,9 +184,7 @@ class SelfAttentionLayer(nn.Module):
     ):
         tgt2 = self.norm(tgt)
         q = k = self.with_pos_embed(tgt2, query_pos)
-        tgt2 = self.self_attn(
-            q, k, value=tgt2, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask
-        )[0]
+        tgt2 = self.self_attn(q, k, value=tgt2, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout(tgt2)
 
         return tgt
@@ -233,13 +202,9 @@ class SelfAttentionLayer(nn.Module):
 
 
 class CrossAttentionLayer(nn.Module):
-    def __init__(
-        self, d_model, nhead, dropout=0.0, activation="relu", normalize_before=False
-    ):
+    def __init__(self, d_model, nhead, dropout=0.0, activation="relu", normalize_before=False):
         super().__init__()
-        self.multihead_attn = CrossAttention(
-            d_model, nhead, attn_drop=dropout, proj_drop=dropout
-        )
+        self.multihead_attn = CrossAttention(d_model, nhead, attn_drop=dropout, proj_drop=dropout)
 
         self.norm = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
@@ -309,12 +274,8 @@ class CrossAttentionLayer(nn.Module):
         query_pos: Optional[Tensor] = None,
     ):
         if self.normalize_before:
-            return self.forward_pre(
-                tgt, memory, memory_mask, memory_key_padding_mask, pos, query_pos
-            )
-        return self.forward_post(
-            tgt, memory, memory_mask, memory_key_padding_mask, pos, query_pos
-        )
+            return self.forward_pre(tgt, memory, memory_mask, memory_key_padding_mask, pos, query_pos)
+        return self.forward_post(tgt, memory, memory_mask, memory_key_padding_mask, pos, query_pos)
 
 
 class FFNLayer(nn.Module):

@@ -36,7 +36,7 @@ def build_pixel_decoder(cfg, input_shape):
     """
     Build a pixel decoder from `cfg.MODEL.ONE_FORMER.PIXEL_DECODER_NAME`.
     """
-    name = cfg.MODEL.OVSEG.PIXEL_DECODER_NAME
+    name = cfg.MODEL.CRIS.PIXEL_DECODER_NAME
     model = SEM_SEG_HEADS_REGISTRY.get(name)(cfg, input_shape)
     forward_features = getattr(model, "forward_features", None)
     if not callable(forward_features):
@@ -299,8 +299,7 @@ class MSDeformAttnPixelDecoder(nn.Module):
                 input_proj_list.append(
                     nn.Sequential(
                         nn.Conv2d(in_channels, conv_dim, kernel_size=1),
-                        # nn.GroupNorm(32, conv_dim),
-                        LayerNorm2d(conv_dim),
+                        nn.GroupNorm(32, conv_dim),
                     )
                 )
             self.input_proj = nn.ModuleList(input_proj_list)
@@ -309,8 +308,7 @@ class MSDeformAttnPixelDecoder(nn.Module):
                 [
                     nn.Sequential(
                         nn.Conv2d(transformer_in_channels[-1], conv_dim, kernel_size=1),
-                        # nn.GroupNorm(32, conv_dim),
-                        LayerNorm2d(conv_dim),
+                        nn.GroupNorm(32, conv_dim),
                     )
                 ]
             )
