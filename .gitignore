@@ -4,7 +4,7 @@ results
 data
 demo
 tools
-
+pretrain_model
 
 *.png
 *.json
