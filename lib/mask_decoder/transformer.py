@@ -309,7 +309,7 @@ class MultiScaleMaskDecoder(nn.Module):
         # [B, Q, K, H, W] -> [B, Q, 1, H, W] -> [B, 1, Q, 1, H, W] -> [B, 1, Q, 1, H*W] -> [B, 1, Q, K, H*W] -> [B, 1, Q*K, H*W]
         attn_mask = attn_mask.sigmoid().ge(0.5)
         attn_mask_y = attn_mask.sum(dim=1, keepdim=True).ge(0.5).repeat(1, T, 1, 1)
-        attn_mask_y = torch.ones_like(attn_mask_y)
+        # attn_mask_y = torch.ones_like(attn_mask_y)
         attn_mask = torch.cat([attn_mask, attn_mask_y], dim=1).flatten(-2)  # B, Q + T, HW
         attn_mask = ~attn_mask.unsqueeze(1).detach()  # B, 1, Q + T, HW
 
