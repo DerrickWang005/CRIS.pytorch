@@ -249,8 +249,7 @@ class CRIS(nn.Module):
         return processed_results
 
     def semantic_inference(self, mask_cls, mask_pred):
-        mask_cls = F.softmax(mask_cls, dim=-1)
+        mask_cls = mask_cls.argmax(1).bool()
         mask_pred = mask_pred.sigmoid()
-        semseg = torch.einsum("qc,qhw->chw", mask_cls, mask_pred)
-        semseg = semseg.argmax(dim=0)  # 0: background, 1: foreground
+        semseg = mask_pred[mask_cls].mean(0).ge(0.5)
         return semseg
