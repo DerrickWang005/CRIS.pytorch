@@ -4,7 +4,7 @@ from torch import nn
 
 from detectron2.config import configurable
 from detectron2.projects.point_rend.point_features import get_uncertain_point_coords_with_randomness, point_sample
-from detectron2.utils.comm import get_rank, get_world_size, is_main_process
+from detectron2.utils.comm import get_world_size
 from detectron2.utils.registry import Registry
 
 from ..utils import is_dist_avail_and_initialized, nested_tensor_from_tensor_list
@@ -12,7 +12,7 @@ from .matcher import HungarianMatcher
 
 CRITERION_REGISTRY = Registry("CRITERION")
 CRITERION_REGISTRY.__doc__ = """
-Registry for criterion in Uni-OVSeg.
+Registry for criterion in CIRS.
 """
 
 
@@ -184,14 +184,15 @@ class SetCriterion(nn.Module):
         target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
         target_classes = torch.full(
             src_logits.shape[:2],
-            # self.num_classes,
             0,
             dtype=torch.int64,
             device=src_logits.device,
         )
         target_classes[idx] = target_classes_o
 
-        loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight)
+        # import pdb; pdb.set_trace()
+        # loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight)
+        loss_ce = F.binary_cross_entropy_with_logits(src_logits, target_classes.float())
         losses = {"loss_ce": loss_ce}
         return losses
 

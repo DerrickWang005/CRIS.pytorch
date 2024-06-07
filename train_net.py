@@ -26,18 +26,8 @@ from detectron2.data import transforms as T
 from detectron2.data.build import trivial_batch_collator
 from detectron2.data.samplers import InferenceSampler
 from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
-from detectron2.evaluation import (
-    CityscapesInstanceEvaluator,
-    CityscapesSemSegEvaluator,
-    COCOEvaluator,
-    COCOPanopticEvaluator,
-    DatasetEvaluators,
-    LVISEvaluator,
-    SemSegEvaluator,
-    verify_results,
-)
+from detectron2.evaluation import verify_results
 from detectron2.projects.deeplab import build_lr_scheduler
-from detectron2.projects.point_rend import ColorAugSSDTransform
 from detectron2.solver.build import maybe_add_gradient_clipping
 from detectron2.utils.logger import setup_logger
 
@@ -68,12 +58,15 @@ class Trainer(DefaultTrainer):
             dataset_name,
             distributed=True,
             output_dir=output_folder,
+            save_imgs=cfg.MODEL.CRIS.TEST.VISUALIZE_SAVE,
         )
 
     @classmethod
     def build_train_loader(cls, cfg):
         dataset = build_datasets(cfg)
-        return build_detection_train_loader(cfg, dataset=dataset, mapper=None, aspect_ratio_grouping=False)
+        return build_detection_train_loader(
+            cfg, dataset=dataset, mapper=None, aspect_ratio_grouping=False, pin_memory=True
+        )
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
@@ -107,6 +100,7 @@ class Trainer(DefaultTrainer):
             batch_size=1,
             sampler=sampler,
             drop_last=False,
+            pin_memory=True,
             num_workers=cfg.DATALOADER.NUM_WORKERS,
             collate_fn=trivial_batch_collator,
         )

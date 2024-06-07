@@ -1,4 +1,5 @@
 import logging
+import os
 import os.path as osp
 import random
 
@@ -123,5 +124,6 @@ class ReferDataset(Dataset):
         data_dict["gt_mask_ori"] = mask_ori.repeat(self.pos_repeat, 1, 1)
         data_dict["gt_class"] = torch.tensor([1] * self.pos_repeat, dtype=torch.int64)
         data_dict["sentence"] = sentence
+        data_dict["filename"] = os.path.basename(file_name)
 
         return data_dict

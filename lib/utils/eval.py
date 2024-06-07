@@ -6,6 +6,8 @@ from collections import OrderedDict
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchshow as ts
+from torchvision.utils import draw_segmentation_masks, make_grid, save_image
 
 from detectron2.evaluation.evaluator import DatasetEvaluator
 from detectron2.utils.comm import all_gather, is_main_process, synchronize
@@ -31,6 +33,8 @@ class ReferEvaluator(DatasetEvaluator):
         self._dataset_name = dataset_name
         self._distributed = distributed
         self._output_dir = output_dir
+        self._vis_dir = os.path.join(output_dir, "vis")
+        os.makedirs(self._vis_dir, exist_ok=True)
         self._save_imgs = save_imgs
 
         self._cpu_device = torch.device("cpu")
@@ -51,7 +55,19 @@ class ReferEvaluator(DatasetEvaluator):
             max_side = max(gt_mask.shape[-2], gt_mask.shape[-1])
             image = F.interpolate(image.unsqueeze(0), size=(max_side, max_side), mode="bilinear", align_corners=False)
             image = image[0, :, : gt_mask.shape[-2], : gt_mask.shape[-1]].to(self._cpu_device)
-            image = np.array(image.permute(1, 2, 0), dtype=np.uint8)
+            image = np.array(image, dtype=np.uint8)
+
+            # save results
+            if self._save_imgs:
+                rst_pred = draw_segmentation_masks(
+                    torch.from_numpy(image), torch.from_numpy(pred_mask).bool(), alpha=0.8, colors="green"
+                )
+                rst_gt = draw_segmentation_masks(
+                    torch.from_numpy(image), torch.from_numpy(gt_mask).bool(), alpha=0.8, colors="blue"
+                )
+                rst = make_grid([rst_gt, rst_pred], nrow=2, padding=5)
+                # import pdb; pdb.set_trace()
+                ts.save(rst, os.path.join(self._vis_dir, input["filename"]))
 
             self._predictions.append(
                 {

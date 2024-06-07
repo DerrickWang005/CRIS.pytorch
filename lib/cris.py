@@ -244,12 +244,12 @@ class CRIS(nn.Module):
             mask_cls_result = mask_cls_result.to(mask_pred_result)
             r = retry_if_cuda_oom(self.semantic_inference)(mask_cls_result, mask_pred_result)
             processed_results[-1]["refer_seg"] = r
-            # processed_results[-1]["gt_masks"] = target["gt_mask_ori"][0]
+
         torch.cuda.empty_cache()
         return processed_results
 
     def semantic_inference(self, mask_cls, mask_pred):
-        mask_cls = mask_cls.argmax(1).bool()
+        mask_cls = mask_cls.sigmoid().ge(0.5)
         mask_pred = mask_pred.sigmoid()
         semseg = mask_pred[mask_cls].mean(0).ge(0.5)
         return semseg

@@ -21,7 +21,7 @@ from ..utils import (
 
 TRANSFORMER_DECODER_REGISTRY = Registry("TRANSFORMER_MODULE")
 TRANSFORMER_DECODER_REGISTRY.__doc__ = """
-Registry for transformer module in MaskFormer.
+Registry for transformer module in CRIS.
 """
 
 
@@ -91,8 +91,8 @@ class MultiScaleMaskDecoder(nn.Module):
         obj_mask = torch.zeros(1, num_query).bool()
         self.register_buffer("obj_mask", obj_mask)
 
-        # void
-        self.void_embed = nn.Embedding(1, cls_dim)
+        # # void
+        # self.void_embed = nn.Embedding(1, cls_dim)
 
         # transformer layers
         self.transformer_self_attention_layers = nn.ModuleList()
@@ -216,9 +216,9 @@ class MultiScaleMaskDecoder(nn.Module):
             query_pad_mask.unsqueeze(1).unsqueeze(1).repeat(1, 1, self.num_query + T, 1)
         )  # B, 1, Q + T, Q + T
 
-        # prepare cls
-        void_embed = self.void_embed.weight.repeat(B, 1)
-        y_sent = torch.stack([void_embed, y_sent], dim=1)
+        # # prepare cls
+        # void_embed = self.void_embed.weight.repeat(B, 1)
+        # y_sent = torch.stack([void_embed, y_sent], dim=1)
 
         # prediction heads on learnable query features
         predictions_mask = []
@@ -296,7 +296,7 @@ class MultiScaleMaskDecoder(nn.Module):
 
         # mask branch
         outputs_mask = torch.einsum("bqc,bchw->bqhw", mask_embed, mask_features)
-        outputs_cls = torch.einsum("bqc,bkc->bqk", cls_embed, y_sent)
+        outputs_cls = torch.einsum("bqc,bc->bq", cls_embed, y_sent)
 
         # NOTE: prediction is of higher-resolution
         attn_mask = F.interpolate(
@@ -311,7 +311,6 @@ class MultiScaleMaskDecoder(nn.Module):
         # [B, Q, K, H, W] -> [B, Q, 1, H, W] -> [B, 1, Q, 1, H, W] -> [B, 1, Q, 1, H*W] -> [B, 1, Q, K, H*W] -> [B, 1, Q*K, H*W]
         attn_mask = attn_mask.sigmoid().ge(0.5)
         attn_mask_y = attn_mask.sum(dim=1, keepdim=True).ge(0.5).repeat(1, T, 1, 1)
-        # attn_mask_y = torch.ones_like(attn_mask_y)
         attn_mask = torch.cat([attn_mask, attn_mask_y], dim=1).flatten(-2)  # B, Q + T, HW
         attn_mask = ~attn_mask.unsqueeze(1).detach()  # B, 1, Q + T, HW
 

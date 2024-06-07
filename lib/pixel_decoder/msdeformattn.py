@@ -13,7 +13,7 @@ from detectron2.config import configurable
 from detectron2.layers import Conv2d, ShapeSpec, get_norm
 from detectron2.modeling import SEM_SEG_HEADS_REGISTRY
 
-from ..utils import CrossAttention, LayerNorm2d, PositionEmbeddingSine
+from ..utils import CrossAttention, PositionEmbeddingSine
 from .ops.modules import MSDeformAttn
 
 

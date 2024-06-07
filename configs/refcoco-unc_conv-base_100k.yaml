@@ -1,0 +1,33 @@
+_BASE_: ./base.yaml
+
+OUTPUT_DIR: ./output/refcoco-unc_convnext-base_step-100k_bs64_512x512pip_repeat5_pix-cross
+
+INPUT:
+  DATASET_NAME: ReferDataset
+  TRAIN_ROOT: /vepfs/home/wangzhaoqing/CRIS.pytorch/data/refcoco
+  TRAIN_NAME: refcoco
+  REFER_SPLIT: unc
+  DATA_SPLIT: train
+  DATA_TEST_SPLIT: val
+  CROP_SIZE: 512
+  POS_REPEAT: 5
+  IGNORE_LABEL: 0
+  FORMAT: RGB
+
+MODEL:
+  BACKBONE:
+    NAME: CLIP
+    CLIP_MODEL_NAME: convnext_base_w_320
+    CLIP_PRETRAINED_WEIGHTS: /vepfs/home/wangzhaoqing/CRIS.pytorch/pretrain_model/models--laion--CLIP-convnext_base_w_320-laion_aesthetic-s13B-b82K/snapshots/02dbcad4596a5fa4ee71a16d35c701e7b12943f0/open_clip_pytorch_model.bin
+  CRIS:
+    PIXEL_DECODER_NAME: MSDeformAttnPixelDecoder2
+
+SOLVER:
+  IMS_PER_BATCH: 64
+  MAX_ITER: 100000
+  STEPS:
+  - 80000
+  - 95000
+
+TEST:
+  EVAL_PERIOD: 10000
