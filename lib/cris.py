@@ -174,7 +174,7 @@ class CRIS(nn.Module):
             mask_features,
             transformer_encoder_features,
             multi_scale_features,
-        ) = self.pixel_decoder.forward_features(features)
+        ) = self.pixel_decoder.forward_features(features, y_word, y_pad_mask)
         outputs = self.mask_decoder(
             multi_scale_features,
             y_word,
@@ -216,7 +216,7 @@ class CRIS(nn.Module):
             mask_features,
             transformer_encoder_features,
             multi_scale_features,
-        ) = self.pixel_decoder.forward_features(features)
+        ) = self.pixel_decoder.forward_features(features, y_word, y_pad_mask)
         outputs = self.mask_decoder(
             multi_scale_features,
             y_word,

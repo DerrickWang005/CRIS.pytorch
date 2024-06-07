@@ -212,7 +212,9 @@ class MultiScaleMaskDecoder(nn.Module):
         output = torch.cat([obj_query, y_word], dim=1)  # B, Q + T, C
         query_pos_embed = output
         query_pad_mask = torch.cat([obj_mask, y_pad_mask], dim=1)  # B, Q + T
-        query_pad_mask = query_pad_mask.unsqueeze(1).unsqueeze(1).repeat(1, 1, self.num_query + T, 1)  # B, Q + T, Q + T
+        query_pad_mask = (
+            query_pad_mask.unsqueeze(1).unsqueeze(1).repeat(1, 1, self.num_query + T, 1)
+        )  # B, 1, Q + T, Q + T
 
         # prepare cls
         void_embed = self.void_embed.weight.repeat(B, 1)
