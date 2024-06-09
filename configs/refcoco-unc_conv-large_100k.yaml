@@ -1,6 +1,6 @@
 _BASE_: ./base.yaml
 
-OUTPUT_DIR: ./output/refcoco-unc_convnext-base_step-100k_bs64_512x512pip_repeat5_pix-cross_both-train
+OUTPUT_DIR: ./output/refcoco-unc_convnext-large_step-100k_bs64_512x512pip_repeat5_pix-cross_both-train
 
 INPUT:
   DATASET_NAME: ReferDataset
@@ -17,10 +17,11 @@ INPUT:
 MODEL:
   BACKBONE:
     NAME: CLIP
-    CLIP_MODEL_NAME: convnext_base_w_320
-    CLIP_PRETRAINED_WEIGHTS: /vepfs/home/wangzhaoqing/develop/CRIS.pytorch/pretrain_model/models--laion--CLIP-convnext_base_w_320-laion_aesthetic-s13B-b82K/snapshots/02dbcad4596a5fa4ee71a16d35c701e7b12943f0/open_clip_pytorch_model.bin
+    CLIP_MODEL_NAME: convnext_large_d_320
+    CLIP_PRETRAINED_WEIGHTS: /vepfs/home/wangzhaoqing/develop/CRIS.pytorch/pretrain_model/models--laion--CLIP-convnext_large_d_320.laion2B-s29B-b131K-ft-soup/snapshots/39918dfbdf69ccd2172e6510a430e92337ee23e1/open_clip_pytorch_model.bin
   CRIS:
     PIXEL_DECODER_NAME: MSDeformAttnPixelDecoder2
+    CLS_DIM: 768
 
 SOLVER:
   IMS_PER_BATCH: 64

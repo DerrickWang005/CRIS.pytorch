@@ -1,0 +1,15 @@
+_BASE_: ./refcoco-unc_conv-large_100k.yaml
+
+OUTPUT_DIR: ./output/refcocog-umd_convnext-large_step-100k_bs64_512x512pip_repeat5_pix-cross_both-train
+
+INPUT:
+  DATASET_NAME: ReferDataset
+  TRAIN_ROOT: /vepfs/home/wangzhaoqing/develop/CRIS.pytorch/data/refcoco
+  TRAIN_NAME: refcocog
+  REFER_SPLIT: umd
+  DATA_SPLIT: train
+  DATA_TEST_SPLIT: val
+  CROP_SIZE: 512
+  POS_REPEAT: 5
+  IGNORE_LABEL: 0
+  FORMAT: RGB

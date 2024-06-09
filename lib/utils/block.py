@@ -5,10 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-try:
-    from torch.nn.attention import SDPBackend, sdpa_kernel
-except:
-    raise RuntimeError("Please update PyTorch to 2.3.0 to use this module.")
+# try:
+#     from torch.nn.attention import SDPBackend, sdpa_kernel
+# except:
+#     raise RuntimeError("Please update PyTorch to 2.3.0 to use this module.")
 
 
 def _get_activation_fn(activation):
@@ -74,8 +74,8 @@ class Attention(nn.Module):
         query = self.q(query).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         key = self.k(key).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         value = self.v(value).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
-            # with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_mem_efficient=True, enable_math=False):
+        # with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_mem_efficient=True, enable_math=False):
             x = F.scaled_dot_product_attention(
                 query,
                 key,
@@ -129,8 +129,8 @@ class CrossAttention(nn.Module):
         key = self.k(key).reshape(B, M, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         value = self.v(value).reshape(B, M, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
-            # with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_mem_efficient=True, enable_math=False):
+        # with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_mem_efficient=True, enable_math=False):
             x = F.scaled_dot_product_attention(
                 query,
                 key,

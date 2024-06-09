@@ -62,7 +62,10 @@ class CLIP(Backbone):
             "res5": self.output_channels[4],
             "clip_embedding": self.dim_latent,
         }
-        self.freeze_everything()
+        # self.freeze_everything()
+        # self.freeze_visual()
+        # self.freeze_text()
+        self.no_freeze()
 
     @classmethod
     def from_config(cls, cfg, model_name, pretrained):
@@ -76,6 +79,25 @@ class CLIP(Backbone):
         self.eval()
         for param in self.parameters():
             param.requires_grad = False
+
+    def freeze_visual(self):
+        for name, param in self.named_parameters():
+            if "visual" in name:
+                param.requires_grad = False
+            if "logit_scale" in name:
+                param.requires_grad = False
+
+    def freeze_text(self):
+        for name, param in self.named_parameters():
+            if "visual" not in name:
+                param.requires_grad = False
+            if "logit_scale" in name or "visual.trunk" in name or "visual.head" in name:
+                param.requires_grad = False
+
+    def no_freeze(self):
+        for name, param in self.named_parameters():
+            if "logit_scale" in name or "visual.trunk" in name or "visual.head" in name:
+                param.requires_grad = False
 
     def tokenize_text(self, text):
         return self.text_tokenizer(text)
@@ -97,9 +119,9 @@ class CLIP(Backbone):
         eos = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.clip_model.text_projection
         return F.normalize(eos, dim=-1) if normalize else eos, x
 
-    @torch.no_grad()
+    # @torch.no_grad()
     def extract_text_features(self, text_list, device):
-        self.eval()
+        # self.eval()
         # reference for templates: https://github.com/mlfoundations/open_clip/blob/91f6cce16b7bee90b3b5d38ca305b5b3b67cc200/src/training/imagenet_zeroshot_data.py
         text_tokens = self.tokenize_text(text_list)
         text_tokens = text_tokens.to(device)
@@ -108,9 +130,9 @@ class CLIP(Backbone):
         sent_features, text_features = self.encode_text(text_tokens, normalize=False)
         return sent_features, text_features, pad_mask
 
-    @torch.no_grad()
+    # @torch.no_grad()
     def extract_visual_features(self, x):
-        self.eval()
+        # self.eval()
         out = {}
         x = self.clip_model.visual.trunk.stem(x)
         out["stem"] = x.contiguous()  # os4
