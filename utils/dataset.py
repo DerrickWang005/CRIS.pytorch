@@ -4,7 +4,9 @@ from typing import List, Union
 import cv2
 import lmdb
 import numpy as np
-import pyarrow as pa
+# import pyarrow as pa
+import pickle5
+
 import torch
 from torch.utils.data import Dataset
 
@@ -89,7 +91,8 @@ def loads_pyarrow(buf):
     Args:
         buf: the output of `dumps`.
     """
-    return pa.deserialize(buf)
+    # return pa.deserialize(buf)
+    return pickle5.loads(buf)
 
 
 class RefDataset(Dataset):
